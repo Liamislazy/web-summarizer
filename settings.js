@@ -1,21 +1,22 @@
 // Shared defaults for popup, options page and background worker.
 const DEFAULT_SETTINGS = {
   apiKey: "",
-  model: "claude-opus-5-5",
+  model: "deepseek-flash",
   maxPages: 15,
   length: "medium",
   language: "",
 };
 
 const MODELS = [
-  { id: "claude-opus-5-5", label: "Claude Opus 5.5 (best quality)" },
-  { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5 (balanced)" },
-  { id: "claude-haiku-5-5", label: "Claude Haiku 5.5 (fastest, cheapest)" },
+  { id: "deepseek-flash", label: "DeepSeek V4.1 Flash (fast, cheap)" },
+  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro (higher quality)" },
 ];
 
 async function loadSettings() {
   const stored = await chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS));
-  return { ...DEFAULT_SETTINGS, ...stored };
+  const settings = { ...DEFAULT_SETTINGS, ...stored };
+  if (!MODELS.some((m) => m.id === settings.model)) settings.model = DEFAULT_SETTINGS.model;
+  return settings;
 }
 
 async function saveSettings(patch) {

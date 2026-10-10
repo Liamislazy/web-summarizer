@@ -36,7 +36,7 @@ async function summarize() {
   const settings = await loadSettings();
 
   if (!settings.apiKey) {
-    setStatus("No API key yet. Click the ⚙ button to add your Anthropic API key.", true);
+    setStatus("No API key yet. Click the ⚙ button to add your DeepSeek API key.", true);
     return;
   }
   if (!currentTab || !/^https?:/.test(currentTab.url || "")) {

@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "Web Summarizer",
   "version": "1.0.0",
-  "description": "Summarize what's on your screen, the whole page, or a whole website with Claude.",
+  "description": "Summarize what's on your screen, the whole page, or a whole website with DeepSeek.",
   "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://api.anthropic.com/*"],
+  "host_permissions": ["https://api.deepseek.com/*"],
   "background": {
     "service_worker": "background.js"
   },

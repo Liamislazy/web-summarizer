@@ -1,6 +1,6 @@
 importScripts("settings.js");
 
-const API_URL = "https://api.anthropic.com/v1/messages";
+const API_URL = "https://api.deepseek.com/chat/completions";
 // ~4 chars per token; keeps a whole-site request well under the context window and the bill sane.
 const MAX_TOTAL_CHARS = 500_000;
 
@@ -50,7 +50,7 @@ function buildPrompt({ mode, pages, length, language }) {
 async function streamSummary(port, request) {
   const settings = await loadSettings();
   if (!settings.apiKey) {
-    port.postMessage({ type: "error", message: "No API key set. Open Settings and paste your Anthropic API key." });
+    port.postMessage({ type: "error", message: "No API key set. Open Settings and paste your DeepSeek API key." });
     return;
   }
 
@@ -62,21 +62,17 @@ async function streamSummary(port, request) {
     model,
     max_tokens: 16000,
     stream: true,
-    output_config: { effort: "low" },
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: prompt }],
+    // Summaries don't need the reasoning pass; skipping it is much faster.
+    reasoning_effort: "none",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
   };
   const headers = {
     "content-type": "application/json",
-    "x-api-key": settings.apiKey,
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-direct-browser-access": "true",
+    authorization: `Bearer ${settings.apiKey}`,
   };
-  // Haiku has no server-side fallback; for the others, retry declined requests on another model.
-  if (!model.startsWith("claude-haiku")) {
-    body.fallbacks = "default";
-    headers["anthropic-beta"] = "server-side-fallback-2026-07-01";
-  }
 
   let res;
   try {
@@ -86,7 +82,8 @@ async function streamSummary(port, request) {
     return;
   }
   if (!res.ok) {
-    let msg = `API error ${res.status}`;
+    const hints = { 401: "Invalid API key", 402: "Your DeepSeek balance is empty — top up at platform.deepseek.com", 429: "Rate limited — slow down" };
+    let msg = `API error ${res.status}${hints[res.status] ? ` (${hints[res.status]})` : ""}`;
     try {
       const err = await res.json();
       if (err.error?.message) msg += `: ${err.error.message}`;
@@ -99,40 +96,47 @@ async function streamSummary(port, request) {
   const decoder = new TextDecoder();
   let buffer = "";
   let full = "";
-  let stopReason = null;
+  let finishReason = null;
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split("\n\n");
-    buffer = events.pop();
-    for (const evt of events) {
-      const dataLine = evt.split("\n").find((l) => l.startsWith("data:"));
-      if (!dataLine) continue;
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue; // skips blank lines and ": keep-alive" comments
+      const payload = line.slice(5).trim();
+      if (payload === "[DONE]") continue;
       let data;
       try {
-        data = JSON.parse(dataLine.slice(5));
+        data = JSON.parse(payload);
       } catch {
         continue;
       }
-      if (data.type === "content_block_delta" && data.delta?.type === "text_delta") {
-        full += data.delta.text;
-        safePost(port, { type: "delta", text: data.delta.text });
-      } else if (data.type === "message_delta" && data.delta?.stop_reason) {
-        stopReason = data.delta.stop_reason;
-      } else if (data.type === "error") {
-        safePost(port, { type: "error", message: data.error?.message || "Stream error" });
+      if (data.error) {
+        safePost(port, { type: "error", message: data.error.message || "Stream error" });
         return;
       }
+      const choice = data.choices?.[0];
+      const text = choice?.delta?.content;
+      if (text) {
+        full += text;
+        safePost(port, { type: "delta", text });
+      }
+      if (choice?.finish_reason) finishReason = choice.finish_reason;
     }
   }
 
-  if (stopReason === "refusal") {
-    safePost(port, { type: "error", message: "The model declined to summarize this content." });
+  if (finishReason === "content_filter") {
+    safePost(port, { type: "error", message: "DeepSeek's content filter blocked this summary." });
     return;
   }
-  if (stopReason === "max_tokens") full += "\n\n_(Summary hit the length limit and was cut off.)_";
+  if (finishReason === "insufficient_system_resource") {
+    safePost(port, { type: "error", message: "DeepSeek is overloaded right now. Try again in a moment." });
+    return;
+  }
+  if (finishReason === "length") full += "\n\n_(Summary hit the length limit and was cut off.)_";
 
   await chrome.storage.local.set({
     lastSummary: { url: request.url, mode: request.mode, text: full, model, at: Date.now() },
