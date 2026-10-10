@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Web Summarizer</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Web Summarizer</h1>
+    <button id="settings" class="icon-btn" title="Settings">&#9881;</button>
+  </header>
+
+  <div class="modes" role="radiogroup" aria-label="What to summarize">
+    <label><input type="radio" name="mode" value="visible" /> <span>Visible screen</span></label>
+    <label><input type="radio" name="mode" value="page" checked /> <span>Whole page</span></label>
+    <label><input type="radio" name="mode" value="site" /> <span>Whole website</span></label>
+  </div>
+
+  <div class="row">
+    <label for="length">Length</label>
+    <select id="length">
+      <option value="short">Short</option>
+      <option value="medium">Medium</option>
+      <option value="detailed">Detailed</option>
+    </select>
+    <button id="go" class="primary">Summarize</button>
+  </div>
+
+  <div id="status" class="status" hidden></div>
+  <article id="output" class="output" hidden></article>
+
+  <footer id="actions" hidden>
+    <button id="copy">Copy</button>
+    <span id="meta"></span>
+  </footer>
+
+  <script src="settings.js"></script>
+  <script src="extract.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
