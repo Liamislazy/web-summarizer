@@ -69,6 +69,8 @@ function extractFullPage() {
 async function extractWholeSite(maxPages, perPageChars) {
   const clean = (s) => s.replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const skipExt = /\.(pdf|zip|gz|rar|7z|jpe?g|png|gif|webp|svg|ico|mp3|mp4|webm|mov|avi|css|js|json|xml|rss|exe|dmg|apk)$/i;
+  // Never follow links that might do something instead of showing a page.
+  const skipAction = /log-?out|sign-?out|log-?off|delete|remove|unsubscribe|cancel|logout|action=|token=|confirm/i;
 
   const here = new URL(location.href);
   here.hash = "";
@@ -86,6 +88,7 @@ async function extractWholeSite(maxPages, perPageChars) {
       continue;
     }
     if (u.origin !== here.origin || !/^https?:$/.test(u.protocol) || skipExt.test(u.pathname)) continue;
+    if (skipAction.test(u.pathname + u.search)) continue;
     u.hash = "";
     if (seen.has(u.href)) continue;
     seen.add(u.href);
@@ -100,7 +103,9 @@ async function extractWholeSite(maxPages, perPageChars) {
 
   async function fetchPage(url) {
     try {
-      const res = await fetch(url, { credentials: "same-origin" });
+      // No cookies: crawled pages are fetched as a logged-out visitor, so your private
+      // logged-in pages are never read, and links can't act on your account.
+      const res = await fetch(url, { credentials: "omit", redirect: "follow" });
       const type = res.headers.get("content-type") || "";
       if (!res.ok || !type.includes("text/html")) throw new Error(`HTTP ${res.status}`);
       const doc = new DOMParser().parseFromString(await res.text(), "text/html");
