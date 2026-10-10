@@ -38,7 +38,7 @@ Permissions are minimal: `activeTab` + `scripting` (only touches the tab when yo
 ## Privacy and security
 
 - **Nothing runs until you click Summarize.** There are no background content scripts, no tracking, no analytics, and no remote code.
-- **Only one destination:** text you summarize is sent to `api.deepseek.com` and nowhere else. It is then handled under [DeepSeek's privacy policy](https://platform.deepseek.com/downloads/DeepSeek%20Privacy%20Policy.html), so don't summarize pages with private info (email, banking, medical, work docs) unless you're OK with DeepSeek seeing it. "Visible screen" and "Whole page" send exactly what that page shows you.
+- **Only one destination:** text you summarize is sent to `api.deepseek.com` and nowhere else. It is then handled under DeepSeek's privacy policy (see deepseek.com), so don't summarize pages with private info (email, banking, medical, work docs) unless you're OK with DeepSeek seeing it. "Visible screen" and "Whole page" send exactly what that page shows you.
 - **The "Whole website" crawler fetches other pages as a logged-out visitor** (no cookies), so it can't read your private logged-in pages or act on your account. It also skips links that look like actions (logout, delete, unsubscribe...).
 - Websites and other extensions can't use this extension or your API key: it only accepts requests from its own popup.
 - Summaries are rendered with HTML escaped, so a malicious page can't inject scripts into the popup. A page *can* hide instructions in its text to skew its own summary (prompt injection), but the model has no tools and can't access anything else.
