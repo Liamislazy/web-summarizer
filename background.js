@@ -5,11 +5,13 @@ const API_URL = "https://api.deepseek.com/chat/completions";
 const MAX_TOTAL_CHARS = 500_000;
 
 const LENGTH_GUIDE = {
-  short: "Keep it brief: a 1-2 sentence TL;DR and at most 5 bullet points.",
-  medium: "Give a 2-3 sentence TL;DR, then 5-10 key points, then any notable details (numbers, dates, names, caveats).",
+  short: "Keep it brief: a 1-2 sentence overview, then at most 5 bullet points.",
+  medium: "Give a 2-3 sentence overview, then 5-10 key points, then any notable details (numbers, dates, names, caveats).",
   detailed:
-    "Give a TL;DR, then a thorough section-by-section breakdown with headings, covering every important point, figure and caveat.",
+    "Give a short overview, then a thorough section-by-section breakdown with headings, covering every important point, figure and caveat.",
 };
+const OPENING_RULE =
+  'Open with the overview as a plain paragraph: no heading or label before it (no "TL;DR", "Summary", "Overview").';
 
 const MODE_LABEL = {
   visible: "the part of a web page currently visible on the user's screen",
@@ -37,7 +39,7 @@ function buildPrompt({ mode, pages, length, language }) {
     docs.push(`<document url="${p.url}" title="${(p.title || "").replace(/"/g, "'")}">\n${text}\n</document>`);
   }
 
-  let task = `Summarize ${MODE_LABEL[mode]}. ${LENGTH_GUIDE[length] || LENGTH_GUIDE.medium}`;
+  let task = `Summarize ${MODE_LABEL[mode]}. ${LENGTH_GUIDE[length] || LENGTH_GUIDE.medium} ${OPENING_RULE}`;
   if (mode === "site") {
     task +=
       " Start with what the website is about overall, then summarize the main sections/pages (cite page titles), and end with how the pages relate.";

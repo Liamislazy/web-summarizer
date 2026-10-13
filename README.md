@@ -11,7 +11,7 @@ A small Chrome extension that summarizes web content with DeepSeek. Pick what to
 | **Whole page** | All text on the current page (prefers the main article area) |
 | **Whole website** | The current page plus up to N same-site pages linked from it (default 15, content links first) |
 
-Summaries stream in as Markdown with a TL;DR and key points, in **Short / Medium / Detailed** length. The last summary for a page is remembered, so closing the popup mid-summary doesn't lose it.
+Summaries stream in as Markdown: a short overview paragraph, then key points, in **Short / Medium / Detailed** length. The last summary for a page is remembered, so closing the popup mid-summary doesn't lose it.
 
 ## Install (unpacked)
 
